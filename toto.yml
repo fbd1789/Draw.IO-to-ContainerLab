@@ -1,0 +1,26 @@
+
+name: lab
+topology:
+  kinds:
+    ceos:
+      image: arista/ceos:4.28.2M
+  nodes:
+    spine1:
+      kinds: ceos
+    spine2:
+      kinds: ceos
+    leaf1a:
+      kinds: ceos
+    leaf1b:
+      kinds: ceos
+    spine3:
+      kinds: ceos
+  links:
+	  - endpoints: ['leaf1a:eth1','spine3:eth1']
+	  - endpoints: ['leaf1a:eth2','leaf1b:eth1']
+	  - endpoints: ['leaf1a:eth3','leaf1b:eth2']
+	  - endpoints: ['leaf1a:eth4','spine1:eth1']
+	  - endpoints: ['leaf1a:eth5','spine2:eth1']
+	  - endpoints: ['leaf1b:eth3','spine1:eth2']
+	  - endpoints: ['leaf1b:eth4','spine2:eth2']
+	  - endpoints: ['leaf1b:eth5','spine3:eth2']

@@ -1,0 +1,8 @@
+
+name: lab
+topology:
+  kinds:
+    ceos:
+      image: arista/ceos:4.30.3M
+  nodes:
+  links:
