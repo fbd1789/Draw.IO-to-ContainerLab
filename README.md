@@ -10,3 +10,4 @@ go version
 go version go1.21.5 linux/amd64
 ```
 ### Simple usage
+![Alt text](DrawIOExemple.png)
