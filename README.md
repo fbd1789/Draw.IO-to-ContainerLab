@@ -4,11 +4,7 @@
 Draw a network diagram on DrawIO and generate a yml file for ContainerLab
 
 ## Installation
-### Prerequisite
-```
-go version
-go version go1.21.5 linux/amd64
-```
+
 ### Simple usage
 Step 1: Draw your network
 
@@ -77,7 +73,13 @@ topology:
 ```
 
 ### Fun usage
+#### Prerequisite
 It is my first software in Go !!
+
+```
+go version
+go version go1.21.5 linux/amd64
+```
 
 ```
 git clone https://github.com/fbd1789/Draw.IO-to-ContainerLab.git
