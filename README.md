@@ -20,10 +20,10 @@ Export from DrawIO the schemas in XML
 ![Alt text](drawIOExemple1.png)
 
 Step 3: Choose your binary
-Windows : drawIOContainerLab.exe
-Linux : drawIOContainerLab
+- Windows : drawIOContainerLab.exe
+- Linux : drawIOContainerLab
 
-Step 4:
+Step 4: Use it
 ```
 go run main.go -h
 Usage of /tmp/go-build1086981949/b001/exe/main:
