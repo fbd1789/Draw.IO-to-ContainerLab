@@ -23,12 +23,16 @@ Step 4: Use it
 ```
 go run main.go -h
 Usage of /tmp/go-build1086981949/b001/exe/main:
-  -i string
-        image version of the code (default "4.30.3M")
-  -s string
-        source file name (default "default.xml")
-  -t string
-        target file name (default "default.yml")
+  -destination string
+      destination file name (default "default.yml")
+  -image string
+      image version of the code (default "4.30.3M")
+  -labName string
+      Name of the lab (default "lab")
+  -management string
+      management subnet for the ceos example : 192.168.1.0/24
+  -source string
+      source file name (default "default.xml")
 ```
 
 Exemple: drawIOContainerLab.exe -s test3.xml

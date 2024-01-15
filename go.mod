@@ -3,6 +3,8 @@ module testGo
 go 1.21.4
 
 require (
+	github.com/3th1nk/cidr v0.2.0 // indirect
+	github.com/apparentlymart/go-cidr v1.1.0 // indirect
 	github.com/aristanetworks/goeapi v1.0.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

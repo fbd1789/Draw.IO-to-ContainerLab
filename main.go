@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"text/template"
+	"github.com/3th1nk/cidr"
 )
 
 type Nodes struct {
@@ -62,8 +63,13 @@ type Links struct {
 	ItemsLink []LinkItem
 }
 
+const VersionCode = "0.1"
+
 type Environment struct {
 	Image string
+	LabName string
+	IpAddress string
+	Network string
 }
 
 func (d *Devices) AddItem(item DeviceItem) {
@@ -75,15 +81,28 @@ func (l *Links) AddItem(item LinkItem) {
 }
 
 func main() {
-	sourceFile := flag.String("s", "default.xml", "source file name")
-	targetFile := flag.String("t", "default.yml", "target file name")
-	ceosImage := flag.String("i", "4.30.3M", "image version of the code")
+	sourceFile := flag.String("source", "default.xml", "source file name")
+	targetFile := flag.String("destination", "default.yml", "destination file name")
+	ceosImage := flag.String("image", "4.30.3M", "image version of the code")
+	management := flag.String("management", "", "management subnet for the ceos example : 192.168.1.0/24")
+	labName := flag.String("labName", "lab", "Name of the lab")
 	flag.Parse()
 
 	d := Devices{}
 	l := Links{}
-	// environment := Environment{Image: "arista/ceos:4.30.3M"}
-	environment := Environment{Image: "arista/ceos:" + *ceosImage}
+
+	// Verify the IP address
+	NetworkName :=""
+	if *management != "" {
+		_, err0 := cidr.Parse(*management)
+		if err0 !=nil {
+			fmt.Println(err0)
+			return
+		}
+		NetworkName = *labName +"-mgnt"
+	}
+
+	environment := Environment{Image: "arista/ceos:" + *ceosImage, LabName: *labName, IpAddress:*management, Network:NetworkName}
 
 	file, err := os.Open(*sourceFile)
 	if err != nil {
@@ -135,7 +154,10 @@ func main() {
 
 	const (
 		headerTemplate = `
-name: lab
+name: {{.LabName}}
+mgmt:
+  network: {{.Network}}
+  ipv4-subnet: {{.IpAddress}}
 topology:
   kinds:
     ceos:
