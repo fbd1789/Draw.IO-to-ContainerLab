@@ -2,15 +2,22 @@ package main
 
 import (
 	// "encoding/json"
+	// "bytes"
 	"bytes"
 	"encoding/xml"
-	"flag"
-	"fmt"
+	"html/template"
 	"io"
-	"os"
 	"strconv"
-	"text/template"
+
+	// "flag"
+	"fmt"
+	// "io"
+	"os"
+	// "strconv"
+	// "text/template"
+	// "github.com/3th1nk/cidr"
 	"github.com/3th1nk/cidr"
+	"gopkg.in/ini.v1"
 )
 
 type Nodes struct {
@@ -66,10 +73,10 @@ type Links struct {
 const VersionCode = "0.1"
 
 type Environment struct {
-	Image string
-	LabName string
+	Image     string
+	LabName   string
 	IpAddress string
-	Network string
+	Network   string
 }
 
 func (d *Devices) AddItem(item DeviceItem) {
@@ -81,30 +88,36 @@ func (l *Links) AddItem(item LinkItem) {
 }
 
 func main() {
-	sourceFile := flag.String("source", "default.xml", "source file name")
-	targetFile := flag.String("destination", "default.yml", "destination file name")
-	ceosImage := flag.String("image", "4.30.3M", "image version of the code")
-	management := flag.String("management", "", "management subnet for the ceos example : 192.168.1.0/24")
-	labName := flag.String("labName", "lab", "Name of the lab")
-	flag.Parse()
+	cfg, err := ini.Load("myConfig.ini")
+	if err != nil {
+		fmt.Printf("Fail to read file: %v", err)
+		os.Exit(1)
+	}
+	// fmt.Println("sourceFile:", cfg.Section("").Key("sourceFile").String())
+
+	sourceFile := cfg.Section("").Key("sourceFile").String()
+	targetFile := cfg.Section("").Key("targetFile").String()
+	ceosImage := cfg.Section("").Key("ceosImage").String()
+	management := cfg.Section("").Key("management").String()
+	labName := cfg.Section("").Key("labName").String()
 
 	d := Devices{}
 	l := Links{}
 
 	// Verify the IP address
-	NetworkName :=""
-	if *management != "" {
-		_, err0 := cidr.Parse(*management)
-		if err0 !=nil {
+	NetworkName := ""
+	if management != "" {
+		_, err0 := cidr.Parse(management)
+		if err0 != nil {
 			fmt.Println(err0)
 			return
 		}
-		NetworkName = *labName +"-mgnt"
+		NetworkName = labName + "-mgnt"
 	}
 
-	environment := Environment{Image: "arista/ceos:" + *ceosImage, LabName: *labName, IpAddress:*management, Network:NetworkName}
+	environment := Environment{Image: "arista/ceos:" + ceosImage, LabName: labName, IpAddress: management, Network: NetworkName}
 
-	file, err := os.Open(*sourceFile)
+	file, err := os.Open(sourceFile)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -154,34 +167,34 @@ func main() {
 
 	const (
 		headerTemplate = `
-name: {{.LabName}}
-mgmt:
-  network: {{.Network}}
-  ipv4-subnet: {{.IpAddress}}
-topology:
-  kinds:
-    ceos:
-      image: {{.Image -}}
-`
+	name: {{.LabName}}
+	mgmt:
+	  network: {{.Network}}
+	  ipv4-subnet: {{.IpAddress}}
+	topology:
+	  kinds:
+	    ceos:
+	      image: {{.Image -}}
+	`
 	)
 
 	const (
 		nodeTemplate = `
-  nodes:
-    {{- range .ItemsNode}}
-    {{.Name}}:
-      kind: ceos
-	{{- end -}}
-`
+	  nodes:
+	    {{- range .ItemsNode}}
+	    {{.Name}}:
+	      kind: ceos
+		{{- end -}}
+	`
 	)
 
 	const (
 		linkTemplate = `
-  links:
-    {{- range .ItemsLink}}
-    - endpoints: ["{{.SourceName}}:{{.SourcePort}}","{{.TargetName}}:{{.TargetPort}}"]
-	{{- end}}
-`
+	  links:
+	    {{- range .ItemsLink}}
+	    - endpoints: ["{{.SourceName}}:{{.SourcePort}}","{{.TargetName}}:{{.TargetPort}}"]
+		{{- end}}
+	`
 	)
 
 	var tpl bytes.Buffer
@@ -215,7 +228,7 @@ topology:
 	str := tpl.String()
 
 	// Sauvegarde de la donnee dans un fichier
-	f, _ := os.Create(*targetFile)
+	f, _ := os.Create(targetFile)
 	defer f.Close()
 	f.Write([]byte(str))
 }
