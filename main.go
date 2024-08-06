@@ -75,14 +75,16 @@ type Nodes struct {
 	ID			string
 	Name		string
 	MgmtIPv4 	string
+	Env      	map[string]string
 }
-func extractNodes(mxfile Mxfile) []Nodes {
+func extractNodes(mxfile Mxfile, VrfMgmt string) []Nodes {
 	var nodes []Nodes
 	for _, value := range mxfile.Diagram.MxGraphModel.Root.MxCell {
 		if len(value.Value) != 0 {
 			node := Nodes{
 				ID:   value.ID,
 				Name: value.Value,
+				Env: map[string]string{"CLAB_MGMT_VRF": VrfMgmt},
 			}
 			nodes = append(nodes, node)
 		}
@@ -153,6 +155,7 @@ type Topology struct {
 type Node struct {
     Kind string `yaml:"kind"`
 	MgmtIPv4 string `yaml:"mgmt-ipv4"`
+	Env      map[string]string `yaml:"env"`
 }
 
 type Link struct {
@@ -167,8 +170,10 @@ func main() {
 	   os.Exit(1)
 	 }
 	LabName := inidata.Section("global").Key("nameLab").String()
+	Ipv4Subnet := inidata.Section("mgmt").Key("ipv4Subnet").String()
 	NetworkMgmt := LabName + "-mgmt"
 	ImageCeos := inidata.Section("topolgy").Key("image").String()
+	VrfMgmt := inidata.Section("nodes").Key("vrf").String()
 
 	// Read the XML file
 	byteValue, err := os.ReadFile("test3.xml")
@@ -186,7 +191,7 @@ func main() {
 	}
 
 	// Extract nodes
-	nodes := extractNodes(mxfile)
+	nodes := extractNodes(mxfile, VrfMgmt)
 
 	// Create json
 	// ID is the Key, Name is the Value
@@ -214,7 +219,7 @@ func main() {
 		Name: LabName,
 		Mgmt: Management{
 			Network:    NetworkMgmt,
-			IPv4Subnet: "192.168.1.0/24",
+			IPv4Subnet: Ipv4Subnet,
 		},
 		Topology: Topology{
 			Kinds: Kinds{
@@ -229,11 +234,11 @@ func main() {
 	} 
 
 	// Build the YML for the nodes section
-	addNode := func(name, kind string, mgmtIPv4 string) {
-		configTest.Topology.Nodes[name] = Node{Kind: kind, MgmtIPv4: mgmtIPv4}
+	addNode := func(name, kind string, mgmtIPv4 string, env map[string]string) {
+		configTest.Topology.Nodes[name] = Node{Kind: kind, MgmtIPv4: mgmtIPv4, Env: env,}
     }
 	for _, node := range nodes {
-		addNode(node.Name,"ceos", node.MgmtIPv4)
+		addNode(node.Name,"ceos", node.MgmtIPv4, node.Env)
 	}
 
 	// Marshal the configuration to YAML

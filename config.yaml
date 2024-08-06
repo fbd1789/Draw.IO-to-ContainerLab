@@ -1,7 +1,7 @@
 name: MonLab
 mgmt:
     network: MonLab-mgmt
-    ipv4-subnet: 192.168.1.0/24
+    ipv4-subnet: 172.20.20.0/24
 topology:
     kinds:
         ceos:
@@ -10,24 +10,38 @@ topology:
         Leaf1a:
             kind: ceos
             mgmt-ipv4: ""
+            env:
+                CLAB_MGMT_VRF: ""
         Leaf1b:
             kind: ceos
             mgmt-ipv4: ""
+            env:
+                CLAB_MGMT_VRF: ""
         Leaf2a:
             kind: ceos
             mgmt-ipv4: ""
+            env:
+                CLAB_MGMT_VRF: ""
         Leaf2b:
             kind: ceos
             mgmt-ipv4: ""
+            env:
+                CLAB_MGMT_VRF: ""
         Spine1:
             kind: ceos
             mgmt-ipv4: ""
+            env:
+                CLAB_MGMT_VRF: ""
         Spine2:
             kind: ceos
             mgmt-ipv4: ""
+            env:
+                CLAB_MGMT_VRF: ""
         Spine3:
             kind: ceos
             mgmt-ipv4: ""
+            env:
+                CLAB_MGMT_VRF: ""
     links:
         - endpoints: ['Spine1:eth2', 'Leaf1a:eth2']
         - endpoints: ['Spine1:eth3', 'Leaf1b:eth2']
