@@ -1,234 +1,249 @@
 package main
 
 import (
-	// "encoding/json"
-	// "bytes"
-	"bytes"
 	"encoding/xml"
-	"html/template"
-	"io"
-	"strconv"
-
-	// "flag"
 	"fmt"
-	// "io"
+	"log"
 	"os"
-	// "strconv"
-	// "text/template"
-	// "github.com/3th1nk/cidr"
-	"github.com/3th1nk/cidr"
+	"strconv"
+	"gopkg.in/yaml.v3"
 	"gopkg.in/ini.v1"
 )
 
-type Nodes struct {
-	XMLName xml.Name `xml:"mxfile"`
-	Diagram Diagram  `xml:"diagram"`
+type Mxfile struct {
+	XMLName  xml.Name `xml:"mxfile"`
+	Host     string   `xml:"host,attr"`
+	Modified string   `xml:"modified,attr"`
+	Agent    string   `xml:"agent,attr"`
+	Version  string   `xml:"version,attr"`
+	Etag     string   `xml:"etag,attr"`
+	Type     string   `xml:"type,attr"`
+	Diagram  Diagram  `xml:"diagram"`
 }
 
 type Diagram struct {
-	XMLNAME      xml.Name     `xml:"diagram"`
+	Name         string       `xml:"name,attr"`
+	ID           string       `xml:"id,attr"`
 	MxGraphModel MxGraphModel `xml:"mxGraphModel"`
 }
 
 type MxGraphModel struct {
-	XMLNAME xml.Name `xml:"mxGraphModel"`
-	Root    Root     `xml:"root"`
+	Dx         string  `xml:"dx,attr"`
+	Dy         string  `xml:"dy,attr"`
+	Grid       string  `xml:"grid,attr"`
+	GridSize   string  `xml:"gridSize,attr"`
+	Guides     string  `xml:"guides,attr"`
+	Tooltips   string  `xml:"tooltips,attr"`
+	Connect    string  `xml:"connect,attr"`
+	Arrows     string  `xml:"arrows,attr"`
+	Fold       string  `xml:"fold,attr"`
+	Page       string  `xml:"page,attr"`
+	PageScale  string  `xml:"pageScale,attr"`
+	PageWidth  string  `xml:"pageWidth,attr"`
+	PageHeight string  `xml:"pageHeight,attr"`
+	Math       string  `xml:"math,attr"`
+	Shadow     string  `xml:"shadow,attr"`
+	Root       Root    `xml:"root"`
 }
 
 type Root struct {
-	XMLNAME xml.Name `xml:"root"`
-	MxCell  []MxCell `xml:"mxCell"`
+	MxCell []MxCell `xml:"mxCell"`
 }
 
 type MxCell struct {
-	ID     string `xml:"id,attr"`
-	Value  string `xml:"value,attr"`
-	Parent string `xml:"parent,attr"`
-	Edge   string `xml:"edge,attr"`
-	Source string `xml:"source,attr"`
-	Target string `xml:"target,attr"`
+	ID       string      `xml:"id,attr"`
+	Parent   string      `xml:"parent,attr,omitempty"`
+	Style    string      `xml:"style,attr,omitempty"`
+	Edge     string      `xml:"edge,attr,omitempty"`
+	Source   string      `xml:"source,attr,omitempty"`
+	Target   string      `xml:"target,attr,omitempty"`
+	Vertex   string      `xml:"vertex,attr,omitempty"`
+	Value    string      `xml:"value,attr,omitempty"`
+	MxGeometry MxGeometry `xml:"mxGeometry"`
 }
 
-type DeviceItem struct {
-	Id              string `json:"Id"`
-	Name            string `json:"Name"`
-	InterfaceNumber int    `json:"InterfaceNumber"`
+type MxGeometry struct {
+	Relative string `xml:"relative,attr,omitempty"`
+	X        string `xml:"x,attr,omitempty"`
+	Y        string `xml:"y,attr,omitempty"`
+	Width    string `xml:"width,attr,omitempty"`
+	Height   string `xml:"height,attr,omitempty"`
 }
 
-type Devices struct {
-	ItemsNode []DeviceItem
+//  Node Extraction
+type Nodes struct {
+	ID		string
+	Name	string
+}
+func extractNodes(mxfile Mxfile) []Nodes {
+	var nodes []Nodes
+	for _, value := range mxfile.Diagram.MxGraphModel.Root.MxCell {
+		if len(value.Value) != 0 {
+			node := Nodes{
+				ID:   value.ID,
+				Name: value.Value,
+			}
+			nodes = append(nodes, node)
+		}
+	}
+	return nodes
 }
 
-type LinkItem struct {
-	SourceName string
-	SourcePort string
-	TargetName string
-	TargetPort string
+// Line Extraction
+type Lines struct {
+	Source	string
+	Target	string
+	PortSource string
+	PortTarget string
+}
+func extractLines (mxfile Mxfile, result  map[string]string) []Lines {
+	var lines []Lines
+	increment := func (port string) string{
+		newPort,_ := strconv.Atoi(port)
+		newPort++
+		return strconv.Itoa(newPort)
+	}
+	for _, value := range mxfile.Diagram.MxGraphModel.Root.MxCell {
+		if len(value.Source)!=0 && len(value.Target)!=0 {
+			deviceSource := result[value.Source]
+			interfaceSource := increment(result[deviceSource])
+			result[deviceSource] = interfaceSource
+			deviceTarget := result[value.Target]
+			interfaceTarget := increment(result[deviceTarget])
+			line := Lines{
+				Source: result[value.Source],
+				Target: result[value.Target],
+				PortSource: "eth" + interfaceSource,
+				PortTarget: "eth" + interfaceTarget,
+			}
+			lines = append(lines, line)
+		}
+	}
+	return lines
 }
 
-type Links struct {
-	ItemsLink []LinkItem
+// YML structure for the export
+type Management struct {
+	Network    string `yaml:"network"`
+	IPv4Subnet string `yaml:"ipv4-subnet"`
 }
 
-const VersionCode = "0.1"
-
-type Environment struct {
-	Image     string
-	LabName   string
-	IpAddress string
-	Network   string
+type Kind struct {
+	Image string `yaml:"image"`
 }
 
-func (d *Devices) AddItem(item DeviceItem) {
-	d.ItemsNode = append(d.ItemsNode, item)
+type Kinds struct {
+	Ceos Kind `yaml:"ceos"`
 }
 
-func (l *Links) AddItem(item LinkItem) {
-	l.ItemsLink = append(l.ItemsLink, item)
+type Config struct {
+	Name     string     `yaml:"name"`
+	Mgmt     Management `yaml:"mgmt"`
+	Topology Topology   `yaml:"topology"`
+}
+
+type Topology struct {
+	Kinds Kinds           `yaml:"kinds"`
+    Nodes map[string]Node `yaml:"nodes"`
+	Links  []Link          `yaml:"links"`
+}
+type Node struct {
+    Kind string `yaml:"kind"`
+}
+
+type Link struct {
+    Endpoints []string `yaml:"endpoints,flow"`
 }
 
 func main() {
-	cfg, err := ini.Load("myConfig.ini")
+	// Read the config.ini file
+	inidata, err := ini.Load("config.ini")
 	if err != nil {
-		fmt.Printf("Fail to read file: %v", err)
-		os.Exit(1)
-	}
-	// fmt.Println("sourceFile:", cfg.Section("").Key("sourceFile").String())
+	   fmt.Printf("Fail to read file: %v", err)
+	   os.Exit(1)
+	 }
+	fmt.Println(inidata.Section("global").Key("nameLab").String())
 
-	sourceFile := cfg.Section("").Key("sourceFile").String()
-	targetFile := cfg.Section("").Key("targetFile").String()
-	ceosImage := cfg.Section("").Key("ceosImage").String()
-	management := cfg.Section("").Key("management").String()
-	labName := cfg.Section("").Key("labName").String()
-
-	d := Devices{}
-	l := Links{}
-
-	// Verify the IP address
-	NetworkName := ""
-	if management != "" {
-		_, err0 := cidr.Parse(management)
-		if err0 != nil {
-			fmt.Println(err0)
-			return
-		}
-		NetworkName = labName + "-mgnt"
-	}
-
-	environment := Environment{Image: "arista/ceos:" + ceosImage, LabName: labName, IpAddress: management, Network: NetworkName}
-
-	file, err := os.Open(sourceFile)
+	// Read the XML file
+	byteValue, err := os.ReadFile("test3.xml")
 	if err != nil {
-		fmt.Println(err)
-	}
-	defer file.Close()
-
-	byteValue, _ := io.ReadAll(file)
-
-	var nodes Nodes
-	xml.Unmarshal(byteValue, &nodes)
-	for i := 0; i < len(nodes.Diagram.MxGraphModel.Root.MxCell); i++ {
-		// fmt.Println(nodes.Diagram.MxGraphModel.Root.MxCell[i].ID,
-		// 	nodes.Diagram.MxGraphModel.Root.MxCell[i].Value,
-		// 	nodes.Diagram.MxGraphModel.Root.MxCell[i].Parent,
-		// 	nodes.Diagram.MxGraphModel.Root.MxCell[i].Edge,
-		// 	nodes.Diagram.MxGraphModel.Root.MxCell[i].Source,
-		// 	nodes.Diagram.MxGraphModel.Root.MxCell[i].Target)
-		if nodes.Diagram.MxGraphModel.Root.MxCell[i].Value != "" {
-			item1 := DeviceItem{Id: nodes.Diagram.MxGraphModel.Root.MxCell[i].ID,
-				Name:            nodes.Diagram.MxGraphModel.Root.MxCell[i].Value,
-				InterfaceNumber: 1}
-			d.AddItem(item1)
-		}
-		if nodes.Diagram.MxGraphModel.Root.MxCell[i].Source != "" && nodes.Diagram.MxGraphModel.Root.MxCell[i].Target != "" {
-			item1 := LinkItem{SourceName: nodes.Diagram.MxGraphModel.Root.MxCell[i].Source,
-				SourcePort: "empty",
-				TargetName: nodes.Diagram.MxGraphModel.Root.MxCell[i].Target,
-				TargetPort: "empty"}
-			l.AddItem(item1)
-		}
+		fmt.Println("Error reading file:", err)
+		return
 	}
 
-	// Mise en place des noms des devices et des interfacess
-	for i, link := range l.ItemsLink {
-		for j, node := range d.ItemsNode {
-			if link.SourceName == node.Id {
-				l.ItemsLink[i].SourceName = node.Name
-				d.ItemsNode[j].InterfaceNumber++
-				l.ItemsLink[i].SourcePort = "eth" + strconv.Itoa((node.InterfaceNumber))
-			}
-			if link.TargetName == node.Id {
-				l.ItemsLink[i].TargetName = node.Name
-				d.ItemsNode[j].InterfaceNumber++
-				l.ItemsLink[i].TargetPort = "eth" + strconv.Itoa((node.InterfaceNumber))
-			}
-		}
-	}
-
-	const (
-		headerTemplate = `
-	name: {{.LabName}}
-	mgmt:
-	  network: {{.Network}}
-	  ipv4-subnet: {{.IpAddress}}
-	topology:
-	  kinds:
-	    ceos:
-	      image: {{.Image -}}
-	`
-	)
-
-	const (
-		nodeTemplate = `
-	  nodes:
-	    {{- range .ItemsNode}}
-	    {{.Name}}:
-	      kind: ceos
-		{{- end -}}
-	`
-	)
-
-	const (
-		linkTemplate = `
-	  links:
-	    {{- range .ItemsLink}}
-	    - endpoints: ["{{.SourceName}}:{{.SourcePort}}","{{.TargetName}}:{{.TargetPort}}"]
-		{{- end}}
-	`
-	)
-
-	var tpl bytes.Buffer
-	tmpl, err := template.New("test").Parse(headerTemplate)
+	// Unmarshal the XML data into the struct
+	var mxfile Mxfile
+	err = xml.Unmarshal(byteValue, &mxfile)
 	if err != nil {
-		panic(err)
-	}
-	err = tmpl.Execute(&tpl, environment)
-	if err != nil {
-		panic(err)
+		fmt.Println("Error unmarshalling XML:", err)
+		return
 	}
 
-	tmpl, err = template.New("test").Parse(nodeTemplate)
-	if err != nil {
-		panic(err)
-	}
-	err = tmpl.Execute(&tpl, d)
-	if err != nil {
-		panic(err)
+	// Extract nodes
+	nodes := extractNodes(mxfile)
+
+	// Create json
+	// ID is the Key, Name is the Value
+	// Name is the Key, "1" is the Value representing the number of interface (eth)
+	result := make(map[string]string)
+    for _, node := range nodes {
+        result[node.ID] = node.Name
+		result[node.Name] = "1"
+    }
+
+	// Extract lines
+	lines := extractLines(mxfile, result)
+
+	// Build the YML for the links section
+	var links []Link
+    for _, ld := range lines {
+        link := Link{
+            Endpoints: []string{fmt.Sprintf("%s:%s", ld.Source, ld.PortSource), fmt.Sprintf("%s:%s", ld.Target, ld.PortTarget)},
+        }
+        links = append(links, link)
+    }
+
+	// Build yml structure
+	configTest := Config{
+		Name: "lab",
+		Mgmt: Management{
+			Network:    "lab-mgnt",
+			IPv4Subnet: "192.168.1.0/24",
+		},
+		Topology: Topology{
+			Kinds: Kinds{
+				Ceos: Kind{
+					Image: "arista/ceos:4.30.3M",
+				},
+			},
+			Nodes: make(map[string]Node),
+			Links: links,
+		},
+	} 
+
+	// Build the YML for the nodes section
+	addNode := func(name, kind string) {
+		configTest.Topology.Nodes[name] = Node{Kind: kind}
+    }
+	for _, node := range nodes {
+		addNode(node.Name,"ceos")
 	}
 
-	tmpl, err = template.New("test").Parse(linkTemplate)
+	// Marshal the configuration to YAML
+    yamlData, err := yaml.Marshal(&configTest)
+    if err != nil {
+        log.Fatalf("error: %v", err)
+    }
+
+    // Print the YAML
+    fmt.Println(string(yamlData))
+	// Save the YAML data to a file
+	fileName := "config.yaml"
+	err = os.WriteFile(fileName, yamlData, 0644)
 	if err != nil {
-		panic(err)
-	}
-	err = tmpl.Execute(&tpl, l)
-	if err != nil {
-		panic(err)
+		log.Fatalf("error writing to file: %v", err)
 	}
 
-	str := tpl.String()
+	fmt.Printf("YAML data has been written to %s\n", fileName)
 
-	// Sauvegarde de la donnee dans un fichier
-	f, _ := os.Create(targetFile)
-	defer f.Close()
-	f.Write([]byte(str))
 }
