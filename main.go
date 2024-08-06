@@ -72,8 +72,9 @@ type MxGeometry struct {
 
 //  Node Extraction
 type Nodes struct {
-	ID		string
-	Name	string
+	ID			string
+	Name		string
+	MgmtIPv4 	string
 }
 func extractNodes(mxfile Mxfile) []Nodes {
 	var nodes []Nodes
@@ -108,8 +109,10 @@ func extractLines (mxfile Mxfile, result  map[string]string) []Lines {
 			deviceSource := result[value.Source]
 			interfaceSource := increment(result[deviceSource])
 			result[deviceSource] = interfaceSource
+
 			deviceTarget := result[value.Target]
 			interfaceTarget := increment(result[deviceTarget])
+			result[deviceTarget] = interfaceTarget
 			line := Lines{
 				Source: result[value.Source],
 				Target: result[value.Target],
@@ -149,6 +152,7 @@ type Topology struct {
 }
 type Node struct {
     Kind string `yaml:"kind"`
+	MgmtIPv4 string `yaml:"mgmt-ipv4"`
 }
 
 type Link struct {
@@ -162,7 +166,9 @@ func main() {
 	   fmt.Printf("Fail to read file: %v", err)
 	   os.Exit(1)
 	 }
-	fmt.Println(inidata.Section("global").Key("nameLab").String())
+	LabName := inidata.Section("global").Key("nameLab").String()
+	NetworkMgmt := LabName + "-mgmt"
+	ImageCeos := inidata.Section("topolgy").Key("image").String()
 
 	// Read the XML file
 	byteValue, err := os.ReadFile("test3.xml")
@@ -205,15 +211,16 @@ func main() {
 
 	// Build yml structure
 	configTest := Config{
-		Name: "lab",
+		Name: LabName,
 		Mgmt: Management{
-			Network:    "lab-mgnt",
+			Network:    NetworkMgmt,
 			IPv4Subnet: "192.168.1.0/24",
 		},
 		Topology: Topology{
 			Kinds: Kinds{
 				Ceos: Kind{
-					Image: "arista/ceos:4.30.3M",
+					// Image: "arista/ceos:4.30.3M",
+					Image: fmt.Sprintf("arista/ceos:%s", ImageCeos),
 				},
 			},
 			Nodes: make(map[string]Node),
@@ -222,11 +229,11 @@ func main() {
 	} 
 
 	// Build the YML for the nodes section
-	addNode := func(name, kind string) {
-		configTest.Topology.Nodes[name] = Node{Kind: kind}
+	addNode := func(name, kind string, mgmtIPv4 string) {
+		configTest.Topology.Nodes[name] = Node{Kind: kind, MgmtIPv4: mgmtIPv4}
     }
 	for _, node := range nodes {
-		addNode(node.Name,"ceos")
+		addNode(node.Name,"ceos", node.MgmtIPv4)
 	}
 
 	// Marshal the configuration to YAML
