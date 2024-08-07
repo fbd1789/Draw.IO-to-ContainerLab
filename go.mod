@@ -8,6 +8,8 @@ require (
 	github.com/aristanetworks/goeapi v1.0.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/seancfoley/bintree v1.3.1 // indirect
+	github.com/seancfoley/ipaddress-go v1.6.0 // indirect
 	github.com/tidwall/gjson v1.17.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect

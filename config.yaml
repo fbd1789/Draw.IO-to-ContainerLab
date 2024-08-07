@@ -9,39 +9,39 @@ topology:
     nodes:
         Leaf1a:
             kind: ceos
-            mgmt-ipv4: ""
+            mgmt-ipv4: 172.20.20.4/24
             env:
-                CLAB_MGMT_VRF: ""
+                CLAB_MGMT_VRF: MGMT
         Leaf1b:
             kind: ceos
-            mgmt-ipv4: ""
+            mgmt-ipv4: 172.20.20.5/24
             env:
-                CLAB_MGMT_VRF: ""
+                CLAB_MGMT_VRF: MGMT
         Leaf2a:
             kind: ceos
-            mgmt-ipv4: ""
+            mgmt-ipv4: 172.20.20.6/24
             env:
-                CLAB_MGMT_VRF: ""
+                CLAB_MGMT_VRF: MGMT
         Leaf2b:
             kind: ceos
-            mgmt-ipv4: ""
+            mgmt-ipv4: 172.20.20.7/24
             env:
-                CLAB_MGMT_VRF: ""
+                CLAB_MGMT_VRF: MGMT
         Spine1:
             kind: ceos
-            mgmt-ipv4: ""
+            mgmt-ipv4: 172.20.20.1/24
             env:
-                CLAB_MGMT_VRF: ""
+                CLAB_MGMT_VRF: MGMT
         Spine2:
             kind: ceos
-            mgmt-ipv4: ""
+            mgmt-ipv4: 172.20.20.2/24
             env:
-                CLAB_MGMT_VRF: ""
+                CLAB_MGMT_VRF: MGMT
         Spine3:
             kind: ceos
-            mgmt-ipv4: ""
+            mgmt-ipv4: 172.20.20.3/24
             env:
-                CLAB_MGMT_VRF: ""
+                CLAB_MGMT_VRF: MGMT
     links:
         - endpoints: ['Spine1:eth2', 'Leaf1a:eth2']
         - endpoints: ['Spine1:eth3', 'Leaf1b:eth2']

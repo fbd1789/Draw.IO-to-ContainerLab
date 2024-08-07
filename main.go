@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"gopkg.in/yaml.v3"
 	"gopkg.in/ini.v1"
+	"github.com/seancfoley/ipaddress-go/ipaddr"
 )
 
 type Mxfile struct {
@@ -71,19 +72,46 @@ type MxGeometry struct {
 }
 
 //  Node Extraction
+
+// Return IP list for the Node Management
+func getIPsInSubnet(cidr string) ([]string, error) {
+	subnet := ipaddr.NewIPAddressString(cidr).GetAddress()
+
+	iterator := subnet.Iterator()
+	var ips []string
+
+	for next := iterator.Next(); next != nil; next = iterator.Next() {
+		ips = append(ips, next.String())
+	}
+	// Check if we have ip address available
+	if len(ips) < 2 {
+		return nil, fmt.Errorf("invalid IP address range in CIDR: %s", cidr)
+	}
+	return ips, nil
+}
+
 type Nodes struct {
 	ID			string
 	Name		string
 	MgmtIPv4 	string
 	Env      	map[string]string
 }
-func extractNodes(mxfile Mxfile, VrfMgmt string) []Nodes {
+func extractNodes(mxfile Mxfile, VrfMgmt string, Ipv4Subnet string) []Nodes {
 	var nodes []Nodes
+	// List IP address for the management
+	ips, err := getIPsInSubnet(Ipv4Subnet)
+	if err != nil {
+		fmt.Println("Error :", err)
+		os.Exit(1)
+	}
+	indexNodes :=0
 	for _, value := range mxfile.Diagram.MxGraphModel.Root.MxCell {
 		if len(value.Value) != 0 {
+			indexNodes++
 			node := Nodes{
 				ID:   value.ID,
 				Name: value.Value,
+				MgmtIPv4: ips[indexNodes],
 				Env: map[string]string{"CLAB_MGMT_VRF": VrfMgmt},
 			}
 			nodes = append(nodes, node)
@@ -171,6 +199,9 @@ func main() {
 	 }
 	LabName := inidata.Section("global").Key("nameLab").String()
 	Ipv4Subnet := inidata.Section("mgmt").Key("ipv4Subnet").String()
+	// if len(Ipv4Subnet) < 5 {
+	// 	Ipv4Subnet = "172.20.20.0/24"
+	// }
 	NetworkMgmt := LabName + "-mgmt"
 	ImageCeos := inidata.Section("topolgy").Key("image").String()
 	VrfMgmt := inidata.Section("nodes").Key("vrf").String()
@@ -191,7 +222,7 @@ func main() {
 	}
 
 	// Extract nodes
-	nodes := extractNodes(mxfile, VrfMgmt)
+	nodes := extractNodes(mxfile, VrfMgmt, Ipv4Subnet)
 
 	// Create json
 	// ID is the Key, Name is the Value
@@ -248,7 +279,8 @@ func main() {
     }
 
     // Print the YAML
-    fmt.Println(string(yamlData))
+    // fmt.Println(string(yamlData))
+
 	// Save the YAML data to a file
 	fileName := "config.yaml"
 	err = os.WriteFile(fileName, yamlData, 0644)
