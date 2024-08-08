@@ -223,7 +223,7 @@ func main() {
 
 	// Create json
 	// ID is the Key, Name is the Value
-	// Name is the Key, "1" is the Value representing the number of interface (eth)
+	// Name is the Key, "0" is the Value representing the number of interface (eth)
 	result := make(map[string]string)
     for _, node := range nodes {
         result[node.ID] = node.Name
