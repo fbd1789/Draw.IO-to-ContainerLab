@@ -199,9 +199,6 @@ func main() {
 	 }
 	LabName := inidata.Section("global").Key("nameLab").String()
 	Ipv4Subnet := inidata.Section("mgmt").Key("ipv4Subnet").String()
-	// if len(Ipv4Subnet) < 5 {
-	// 	Ipv4Subnet = "172.20.20.0/24"
-	// }
 	NetworkMgmt := LabName + "-mgmt"
 	ImageCeos := inidata.Section("topolgy").Key("image").String()
 	VrfMgmt := inidata.Section("nodes").Key("vrf").String()
@@ -230,7 +227,7 @@ func main() {
 	result := make(map[string]string)
     for _, node := range nodes {
         result[node.ID] = node.Name
-		result[node.Name] = "1"
+		result[node.Name] = "0"
     }
 
 	// Extract lines
