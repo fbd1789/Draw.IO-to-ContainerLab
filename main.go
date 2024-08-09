@@ -286,6 +286,6 @@ func main() {
 		log.Fatalf("error writing to file: %v", err)
 	}
 
-	fmt.Printf("YAML data has been written to %s\n", fileName)
+	fmt.Printf("YAML data has been written to %s\n", FileName)
 
 }
