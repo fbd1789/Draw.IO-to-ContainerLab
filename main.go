@@ -202,9 +202,10 @@ func main() {
 	NetworkMgmt := LabName + "-mgmt"
 	ImageCeos := inidata.Section("topolgy").Key("image").String()
 	VrfMgmt := inidata.Section("nodes").Key("vrf").String()
+	FileSrcXml := inidata.Section("global").Key("fileSrcYml").String()
 
 	// Read the XML file
-	byteValue, err := os.ReadFile("test3.xml")
+	byteValue, err := os.ReadFile(FileSrcXml)
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 		return
@@ -279,8 +280,8 @@ func main() {
     // fmt.Println(string(yamlData))
 
 	// Save the YAML data to a file
-	fileName := "config.yaml"
-	err = os.WriteFile(fileName, yamlData, 0644)
+	FileName := "config.yaml"
+	err = os.WriteFile(FileName, yamlData, 0644)
 	if err != nil {
 		log.Fatalf("error writing to file: %v", err)
 	}
