@@ -78,10 +78,11 @@ func getIPsInSubnet(cidr string) ([]string, error) {
 	subnet := ipaddr.NewIPAddressString(cidr).GetAddress()
 
 	iterator := subnet.Iterator()
+
 	var ips []string
 
 	for next := iterator.Next(); next != nil; next = iterator.Next() {
-		ips = append(ips, next.String())
+		ips = append(ips, next.WithoutPrefixLen().String())
 	}
 	// Check if we have ip address available
 	if len(ips) < 2 {
@@ -89,6 +90,33 @@ func getIPsInSubnet(cidr string) ([]string, error) {
 	}
 	return ips, nil
 }
+
+// func getIPsInSubnet(cidr string) ([]string, error) {
+// 	// Crée une adresse IP à partir de la chaîne CIDR
+// 	subnet := ipaddr.NewIPAddressString(cidr).GetAddress()
+
+// 	// Vérifie si l'adresse est un réseau de sous-réseau
+// 	if subnet.IsMultiple() {
+// 		// Si c'est un réseau, crée un itérateur pour parcourir toutes les adresses IP
+// 		iterator := subnet.Iterator()
+// 		var ips []string
+
+// 		for next := iterator.Next(); next != nil; next = iterator.Next() {
+// 			// Ajouter uniquement l'adresse IP à la liste
+// 			ips = append(ips, next.WithoutPrefixLen().String())
+// 		}
+
+// 		// Vérifie si nous avons au moins deux adresses IP (par exemple, pour éviter d'avoir un réseau vide)
+// 		if len(ips) < 2 {
+// 			return nil, fmt.Errorf("invalid IP address range in CIDR: %s", cidr)
+// 		}
+
+// 		return ips, nil
+// 	}
+
+// 	// Si ce n'est pas un réseau, retourne une erreur
+// 	return nil, fmt.Errorf("not a valid subnet: %s", cidr)
+// }
 
 type Nodes struct {
 	ID			string
