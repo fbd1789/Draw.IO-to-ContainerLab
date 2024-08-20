@@ -196,13 +196,14 @@ func main() {
 	if err != nil {
 	   fmt.Printf("Fail to read file: %v", err)
 	   os.Exit(1)
-	 }
+	}
+	
 	LabName := inidata.Section("global").Key("nameLab").String()
 	Ipv4Subnet := inidata.Section("mgmt").Key("ipv4Subnet").String()
 	NetworkMgmt := LabName + "-mgmt"
 	ImageCeos := inidata.Section("topolgy").Key("image").String()
 	VrfMgmt := inidata.Section("nodes").Key("vrf").String()
-	FileSrcXml := inidata.Section("global").Key("fileSrcYml").String()
+	FileSrcXml := inidata.Section("global").Key("fileSrcXml").String()
 
 	// Read the XML file
 	byteValue, err := os.ReadFile(FileSrcXml)
@@ -210,7 +211,6 @@ func main() {
 		fmt.Println("Error reading file:", err)
 		return
 	}
-
 	// Unmarshal the XML data into the struct
 	var mxfile Mxfile
 	err = xml.Unmarshal(byteValue, &mxfile)
