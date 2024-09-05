@@ -39,7 +39,7 @@ vrf = MGMT
 Step 5:
 A directory is created with the "NameLab"
 Inside the directory you will find the config.yaml for containerLab abd all the file for CEOS
-```
+
 
 Exemple: versionWindows.exe
 A config.yaml is generated for the containerLab
