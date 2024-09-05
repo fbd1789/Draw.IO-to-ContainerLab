@@ -13,7 +13,7 @@ Step 1: Draw your network
 Step 2: Export your network
 Export from DrawIO the schemas in XML
 
-![Alt text](drawIOExample1.png)
+![Alt text](DrawIOExample1.png)
 
 Step 3: Choose your binary
 - Windows : versionWindows.exe
