@@ -85,8 +85,8 @@ vrf = MGMT
     ```bash
     ./versionLinux_v1
     ```
-    or for windows
-      ```
+    or for windows:
+    ```bash
     ./versionWindows_v1.exe
     ```
 
