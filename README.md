@@ -83,7 +83,11 @@ vrf = MGMT
 
 - Then, run the program:
     ```bash
-    ./DrawIO-to-ContainerLab
+    ./versionLinux_v1
+    ```
+    or for windows
+      ```
+    ./versionWindows_v1.exe
     ```
 
 This will generate a `config.yaml` file in a directory named according to the `[global]` name specified in the `config.ini`.
