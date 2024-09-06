@@ -1,52 +1,98 @@
+
 # Draw.IO-to-ContainerLab
 
 ## Introduction
-Draw a network diagram on DrawIO and generate a yml file for ContainerLab
+
+This project allows you to draw a network diagram in **DrawIO**, and then generate a YAML file compatible with **ContainerLab** to simulate this network.
+
+## Features
+
+- Draw a network in Draw.IO.
+- Export it as XML.
+- Use the Go program to convert the export into a YAML file for **ContainerLab**.
 
 ## Installation
 
-### Simple usage
-Step 1: Draw your network
+### Prerequisites
 
-![Alt text](DrawIOExample.png)
+You need to have Go installed to compile and use the program.
 
-Step 2: Export your network
-Export from DrawIO the schemas in XML
+- Verify that Go is installed on your machine:
+    ```bash
+    go version
+    ```
 
-![Alt text](DrawIOExample1.png)
+### Clone the project
 
-Step 3: Choose your binary
-- Windows : versionWindows.exe
-- Linux : versionLinux
+Clone the Git repository to your local machine:
 
-Step 4: Use it
+```bash
+git clone https://github.com/your-username/Draw.IO-to-ContainerLab.git
 ```
-Define the information that needed in the config.ini file
+
+### Compilation
+
+Navigate to the project directory and compile the Go program:
+
+```bash
+cd Draw.IO-to-ContainerLab
+go build main.go
+```
+
+This will generate an executable that can be used to convert XML files to YAML files for **ContainerLab**.
+
+## Usage
+
+### Step 1: Draw your network
+
+Create a diagram of your network using Draw.IO.
+
+Network example:
+
+![Network example](DrawIOExample.png)
+
+### Step 2: Export the diagram
+
+Once the diagram is drawn, export it in XML format from Draw.IO.
+
+- Go to **File** → **Export as** → **XML**:
+
+![Export as XML](DrawIOExample1.png)
+
+### Step 3: Generate the YAML file
+
+After exporting the XML, use the generated executable to convert this file into a YAML file compatible with **ContainerLab**.
+
+- Edit the `config.ini` file with the specific details of your network.
+
+Example `config.ini`:
+```ini
 [global]
-nameLab = MonLab
+nameLab = MyLab
 fileSrcXml = ExportXML.xml
 
 [mgmt]
 ipv4Subnet = 172.20.20.0/24
 
-[topolgy]
+[topology]
 image = 4.30.3M
 
 [nodes]
 vrf = MGMT
 ```
 
-Step 5:
-A directory is created with the "NameLab"
-Inside the directory you will find the config.yaml for containerLab abd all the file for CEOS
+- Then, run the program:
+    ```bash
+    ./DrawIO-to-ContainerLab
+    ```
 
+This will generate a `config.yaml` file in a directory named according to the `[global]` name specified in the `config.ini`.
 
-Exemple: versionWindows.exe
-A config.yaml is generated for the containerLab
-```
-name: MonLab
+Example of the generated YAML file:
+```yaml
+name: MyLab
 mgmt:
-    network: MonLab-mgmt
+    network: MyLab-mgmt
     ipv4-subnet: 172.20.20.0/24
 topology:
     kinds:
@@ -69,38 +115,16 @@ topology:
                 CLAB_MGMT_VRF: MGMT
             binds:
                 - configs/ceos-config/Leaf2a.cfg:/mnt/flash/ceos-config:ro
-        Leaf2b:
-            kind: ceos
-            mgmt-ipv4: 172.20.20.6
-            env:
-                CLAB_MGMT_VRF: MGMT
-            binds:
-                - configs/ceos-config/Leaf2b.cfg:/mnt/flash/ceos-config:ro
-
-        Spine2:
-            kind: ceos
-            mgmt-ipv4: 172.20.20.3
-            env:
-                CLAB_MGMT_VRF: MGMT
-            binds:
-                - configs/ceos-config/Spine2.cfg:/mnt/flash/ceos-config:ro
-    links:
-        - endpoints: ['Leaf1:eth1', 'Spine1:eth1']
-        - endpoints: ['Leaf1:eth2', 'Spine2:eth1']
-        - endpoints: ['Leaf2a:eth1', 'Spine1:eth2']
-        - endpoints: ['Leaf2a:eth2', 'Spine2:eth2']
- 
 ```
 
-### Fun usage
-#### Prerequisite
-It is my first software in Go !!
+## Provided Files
 
-```
-go version
-go version go1.21.5 linux/amd64
-```
+- **DrawIOExample.png** : An example Draw.IO diagram.
+- **DrawIOExample1.png** : Illustration of exporting as XML in Draw.IO.
+- **example.xml** : Example XML file exported from Draw.IO.
+- **config.ini** : Example configuration file used to generate the YAML file.
+- **main.go** : The Go program to generate YAML files from the XML file.
 
-```
-git clone https://github.com/fbd1789/Draw.IO-to-ContainerLab.git
-```
+## Author
+
+Bee nice it is my first soft in Go
