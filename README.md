@@ -128,6 +128,8 @@ topology:
 - **example.xml** : Example XML file exported from Draw.IO.
 - **config.ini** : Example configuration file used to generate the YAML file.
 - **main.go** : The Go program to generate YAML files from the XML file.
+- **versionLinux_v1** : Compiled version for linux or mac
+- **versionWindows_v1** : Compiled version for windows
 
 ## Author
 
