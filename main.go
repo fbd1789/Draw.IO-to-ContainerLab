@@ -95,56 +95,23 @@ func getIPsInSubnet(cidr string) ([]string, error) {
 	return ips, nil
 }
 
-// type Nodes struct {
-// 	ID			string
-// 	Name		string
-// 	MgmtIPv4 	string
-// 	Env      	map[string]string
-// 	Binds		map[string]string
-// }
 type Nodes struct {
 	ID       string
 	Name     string
 	MgmtIPv4 string
 	Env      map[string]string
-	Binds    []string  // Changer ici pour []string au lieu de map[string]string
+	Binds    []string
 }
 
-
-// func extractNodes(mxfile Mxfile, VrfMgmt string, Ipv4Subnet string) []Nodes {
-// 	var nodes []Nodes
-// 	// List IP address for the management
-// 	ips, err := getIPsInSubnet(Ipv4Subnet)
-// 	if err != nil {
-// 		fmt.Println("Error :", err)
-// 		os.Exit(1)
-// 	}
-// 	indexNodes :=1 // L'adresse IP va commencer a 1 pour eviter 172.20.20.1 qui est la default GW dans containerLab
-// 	for _, value := range mxfile.Diagram.MxGraphModel.Root.MxCell {
-// 		if len(value.Value) != 0 {
-// 			indexNodes++
-// 			node := Nodes{
-// 				ID:   value.ID,
-// 				Name: value.Value,
-// 				MgmtIPv4: ips[indexNodes],
-// 				Env: map[string]string{"CLAB_MGMT_VRF": VrfMgmt},
-// 				Binds: map[string]string{"configs/ceos-config/"+value.Value+".cfg":"/mnt/flash/ceos-config:ro"},
-// 				// Binds: []string{"configs/ceos-config/"+value.Value+".cfg:/mnt/flash/ceos-config:ro"},
-// 			}
-// 			nodes = append(nodes, node)
-// 		}
-// 	}
-// 	return nodes
-// }
 func extractNodes(mxfile Mxfile, VrfMgmt string, Ipv4Subnet string) []Nodes {
 	var nodes []Nodes
-	// List IP address for the management
+	// List IP addresses for management
 	ips, err := getIPsInSubnet(Ipv4Subnet)
 	if err != nil {
 		fmt.Println("Error :", err)
 		os.Exit(1)
 	}
-	indexNodes := 1 // L'adresse IP va commencer à 1 pour éviter 172.20.20.1 qui est la default GW dans containerLab
+	indexNodes := 1 // The IP address will start at 1 to avoid 172.20.20.1, which is the default gateway in containerLab
 	for _, value := range mxfile.Diagram.MxGraphModel.Root.MxCell {
 		if len(value.Value) != 0 {
 			indexNodes++
@@ -153,16 +120,13 @@ func extractNodes(mxfile Mxfile, VrfMgmt string, Ipv4Subnet string) []Nodes {
 				Name:     value.Value,
 				MgmtIPv4: ips[indexNodes],
 				Env:      map[string]string{"CLAB_MGMT_VRF": VrfMgmt},
-				Binds:    []string{"configs/ceos-config/" + value.Value + ".cfg:/mnt/flash/ceos-config:ro"}, // Utilisation d'une slice de chaînes ici
+				Binds:    []string{"configs/ceos-config/" + value.Value + ".cfg:/mnt/flash/ceos-config:ro"},
 			}
 			nodes = append(nodes, node)
 		}
 	}
 	return nodes
 }
-
-
-
 
 // Line Extraction
 type Lines struct {
@@ -225,12 +189,7 @@ type Topology struct {
     Nodes map[string]Node `yaml:"nodes"`
 	Links  []Link          `yaml:"links"`
 }
-// type Node struct {
-//     Kind string `yaml:"kind"`
-// 	MgmtIPv4 string `yaml:"mgmt-ipv4"`
-// 	Env      map[string]string `yaml:"env"`
-// 	Binds	[]map[string]string `yaml:"binds"`
-// }
+
 type Node struct {
     Kind     string            `yaml:"kind"`
     MgmtIPv4 string            `yaml:"mgmt-ipv4"`
@@ -241,15 +200,6 @@ type Node struct {
 type Link struct {
     Endpoints []string `yaml:"endpoints,flow"`
 }
-
-// Conversion d'un map en slice de maps
-// func convertMapToSlice(input map[string]string) []map[string]string {
-// 	var result []map[string]string
-// 	for k, v := range input {
-// 		result = append(result, map[string]string{k: v})
-// 	}
-// 	return result
-// }
 
 func main() {
 	// Read the config.ini file
@@ -324,22 +274,13 @@ func main() {
 	} 
 
 	// Build the YML for the nodes section
-	// addNode := func(name, kind string, mgmtIPv4 string, env map[string]string, bind []map[string]string) {
-	// 	configTest.Topology.Nodes[name] = Node{Kind: kind, MgmtIPv4: mgmtIPv4, Env: env, Binds: bind,}
-    // }
 	addNode := func(name, kind string, mgmtIPv4 string, env map[string]string, bind []string) {
 		configTest.Topology.Nodes[name] = Node{Kind: kind, MgmtIPv4: mgmtIPv4, Env: env, Binds: bind}
 	}
 	
-	// for _, node := range nodes {
-	// 	bindSlice := convertMapToSlice(node.Binds)
-	// 	addNode(node.Name,"ceos", node.MgmtIPv4, node.Env, bindSlice)
-	// }
 	for _, node := range nodes {
 		addNode(node.Name, "ceos", node.MgmtIPv4, node.Env, node.Binds)
 	}
-	
-
 
 	// Marshal the configuration to YAML
     yamlData, err := yaml.Marshal(&configTest)
@@ -347,15 +288,15 @@ func main() {
         log.Fatalf("error: %v", err)
     }
 
-	// Créer le répertoire de configuration s'il n'existe pas
+	// Create the configuration directory if it does not exist
 	err = os.MkdirAll(LabName, 0755)
 	if err != nil {
-		log.Printf("erreur lors de la création du répertoire : %v", err)
+		log.Printf("Error while creating the directory: %v", err)
 	}
 
 	// Save the YAML data to a file
 	FileName := "config.yaml"
-	// Générer le nom complet du fichier de configuration
+	// Generate the full name of the configuration file
 	FileName = filepath.Join(LabName,FileName)
 	err = os.WriteFile(FileName, yamlData, 0644)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-	// Structures Go pour mapper le fichier YAML	
+	// Go structures to map the YAML file	
 	type Node struct {
 		Kind     string            `yaml:"kind"`
 	}
@@ -23,28 +23,28 @@ import (
 		Topology Topology   `yaml:"topology"`
 	}
 
-// readYMLFile genere une liste de node
+// readYMLFile generates a list of nodes
 func readYMLFile(LabName string) []string {
 	// Lire le fichier YAML
-	data, err := os.ReadFile(LabName) // Remplace "config.yml" par le nom de ton fichier
+	data, err := os.ReadFile(LabName)
 	if err != nil {
-		log.Fatalf("Erreur lors de la lecture du fichier YAML : %v", err)
+		log.Fatalf("Error while reading the YAML file: %v", err)
 	}
 
-	// Décoder le fichier YAML dans une structure Go
+	// Decode the YAML file into a Go structure
 	var config Config
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
-		log.Fatalf("Erreur lors du décodage du fichier YAML : %v", err)
+		log.Fatalf("Error while decoding the YAML file: %v", err)
 	}
 
-	// Récupérer les noms des switches (clés de la map 'Nodes')
+	// Retrieve the names of the switches (keys from the 'Nodes' map)
 	var switchNames []string
 	for nodeName := range config.Topology.Nodes {
 		switchNames = append(switchNames, nodeName)
 	}
 
-	// Afficher la liste des noms des switches
+	// Display the list of switch names
 	return switchNames
 }
 
@@ -53,46 +53,45 @@ func generateRandomMacPart(rng *rand.Rand) string {
 	return fmt.Sprintf("%02x:%02x:%02x", rng.Intn(256), rng.Intn(256), rng.Intn(256))
 }
 
-// GenerateConfigFiles lit un fichier contenant les noms des routeurs et génère des fichiers de configuration
+// GenerateConfigFiles reads a file containing the names of the routers and generates configuration files
 func GenerateConfigFiles(LabName,FileName string) error {
-	// Créer le répertoire de configuration s'il n'existe pas
+	// Create the configuration directory if it does not exist
 	fullPath := fmt.Sprintf("%s/%s",LabName, "configs/ceos-config")
 	
 	err := os.MkdirAll(fullPath, 0755)
 	if err != nil {
-		return fmt.Errorf("erreur lors de la création du répertoire : %v", err)
+		return fmt.Errorf("error while creating the directory: %v", err)
 	}
 
-	// Ouvrir le fichier contenant les noms des routeurs (switch.txt)
+	// Open the file containing the router names (config.yaml)
 	switchNames := readYMLFile(fmt.Sprintf("%s/%s",LabName, "config.yaml"))
 
-	// Initialiser un compteur pour le SERIALNUMBER
+	// Initialize a counter for the SERIALNUMBER
 	serialNumber := 1000
 
-	// Créer un générateur de nombres aléatoires
+	// Create a random number generator
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for _,switchName := range switchNames {
-		// Générer le nom complet du fichier de configuration
+		// Generate the full name of the configuration file
 		cfgFileName := filepath.Join(fullPath, fmt.Sprintf("%s.cfg", switchName))
 
-		// Générer la configuration du fichier
+		// Generate the file configuration
 		config := fmt.Sprintf(
 			"SERIALNUMBER=FDDATACENTER%d\nSYSTEMMACADDR=00:1c:73:%s\n",
 			serialNumber, generateRandomMacPart(rng),
 		)
 
-		// Créer et écrire dans le fichier de configuration
+		// Create and write to the configuration file
 		err = os.WriteFile(cfgFileName, []byte(config), 0644)
 		if err != nil {
-			return fmt.Errorf("erreur lors de la création du fichier %s : %v", cfgFileName, err)
+			return fmt.Errorf("error while creating the file %s : %v", cfgFileName, err)
 		}
 
-		fmt.Printf("Fichier %s généré avec succès.\n", cfgFileName)
+		fmt.Printf("file %s generated successfuly.\n", cfgFileName)
 
-		// Incrémenter le numéro de série pour le prochain routeur
+		// Increment the serial number for the next router
 		serialNumber++
 	}
-
 	return nil
 }
